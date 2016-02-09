@@ -7,7 +7,6 @@
 #include <memory>
 #include <tuple>
 using std::list;
-using std::tuple;
 using std::unique_ptr;
 
 class Function {
@@ -66,21 +65,25 @@ class MemberFunction : public Function {
 			(C::*func2)(int, int),
 			(C::*func3)(int, int, int),
 			(C::*func4)(int, int, int, int);
-	} func ;
+	} func;
 
+	void *getFunc() const { return 0; }
 
-	void *getFunc() const {
+	virtual bool operator ==(Function *f) {
+		auto mf = dynamic_cast<MemberFunction<C>*>(f);
+		if (mf->obj != obj) return false;
+		if (mf->getType() != getType()) return false;
 		switch (getType()) {
 		case 0:
-			return func.func0;
+			return func.func0 == mf->func.func0;
 		case 1:
-			return func.func1;
+			return func.func1 == mf->func.func1;
 		case 2:
-			return func.func2;
+			return func.func2 == mf->func.func2;
 		case 3:
-			return func.func3;
+			return func.func3 == mf->func.func3;
 		case 4:
-			return func.func4;
+			return func.func4 == mf->func.func4;
 		default:
 			throw "ERROR";
 		}
@@ -149,7 +152,7 @@ public:
 
 	GlobalFunction(void(*f1)(int)) : Function(1) { func.func1 = f1; }
 
-	GlobalFunction(void(*f2)(int, int)) : Function(2) {	func.func2 = f2; }
+	GlobalFunction(void(*f2)(int, int)) : Function(2) { func.func2 = f2; }
 
 	GlobalFunction(void(*f3)(int, int, int)) : Function(3) { func.func3 = f3; }
 

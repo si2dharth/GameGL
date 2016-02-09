@@ -2,8 +2,16 @@
 
 
 class Shape {
-	float originX, originY, originZ;
 public:
-	void translate(float x, float y, float z);
-	virtual void draw();
+	virtual void draw() = 0;
+};
+
+class Shape2D {
+public:
+
+};
+
+class Shape3D {
+public:
+
 };

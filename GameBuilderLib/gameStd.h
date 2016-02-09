@@ -23,6 +23,10 @@ namespace GameWindow {
 
 	EventHandler &mouseHandler();
 	EventHandler &drawHandler();
+	EventHandler &draw2DHandler();
+	EventHandler &draw3DHandler();
+	EventHandler &drawn2DHandler();
+	EventHandler &drawn3DHandler();
 	EventHandler &resizeHandler();
 	EventHandler &mouseMoveHandler();
 	EventHandler &mouseDragHandler();

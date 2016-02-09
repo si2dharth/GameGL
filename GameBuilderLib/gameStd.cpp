@@ -8,11 +8,16 @@ namespace GameWindow {
 	int width = 640, height = 480;
 	int posX = -1, posY = -1;
 	int windowID = -1;
+	unsigned int mode = GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE;
 
 	namespace EventHandlers {
 		EventHandler
 			mouse,
 			draw,
+			draw2D,
+			drawn2D,
+			draw3D,
+			drawn3D,
 			resize,
 			mouseMove,
 			mouseDrag,
@@ -36,6 +41,37 @@ namespace GameWindow {
 	EventHandler &keyPressHandler() { return EventHandlers::keyPress; }
 	EventHandler &idleHandler() { return EventHandlers::idle; }
 	EventHandler &timerHandler() { return EventHandlers::timer; }
+	EventHandler &draw2DHandler() { return EventHandlers::draw2D; }
+	EventHandler &draw3DHandler() { return EventHandlers::draw3D; }
+	EventHandler &drawn2DHandler() { return EventHandlers::drawn2D; }
+	EventHandler &drawn3DHandler() { return EventHandlers::drawn3D; }
+
+	void switch3D() {
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+	}
+
+	void stop3D() {
+		glPopMatrix();
+	}
+
+	void switch2D() {
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		glOrtho(0, width, height, 0, -1.0, 10.0);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		glDisable(GL_CULL_FACE);
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
+
+	void stop2D() {
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+	}
 
 	void setTitle(string title) {
 		GameWindow::title = title;
@@ -60,17 +96,30 @@ namespace GameWindow {
 		}
 	}
 
+	void setMode(unsigned int mode) {
+		GameWindow::mode = mode;
+	}
+
 	void drawCallback() {
-		draw();
-		EventHandlers::draw.raise();
+		//EventHandlers::draw.raise();
+		switch3D();
+		EventHandlers::draw3D.raise();
+		EventHandlers::drawn3D.raise();
+		stop3D();
+		switch2D();
+		EventHandlers::draw2D.raise();
+		EventHandlers::drawn2D.raise();		
+		stop2D();
 		glutSwapBuffers();
 	}
 
 	void clearWindow() {
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
 	void windowResized(int w, int h) {
+		width = w;
+		height = h;
 		EventHandlers::resize.raise(w, h);
 	}
 
@@ -120,9 +169,9 @@ void main(int nargs, char **args) {
 	setup(nargs, args);
 	glutInitWindowSize(width, height);
 	glutInitWindowPosition(posX, posY);
+	glutInitDisplayMode(mode);
 	windowID = glutCreateWindow(title.c_str());
 	glutDisplayFunc(drawCallback);
-
 	glutMouseFunc(mouseEvent);
 	glutMotionFunc(mouseDrag);
 	glutPassiveMotionFunc(mouseMove);
@@ -131,6 +180,43 @@ void main(int nargs, char **args) {
 	glutIdleFunc(idle);
 	glutReshapeFunc(windowResized);
 	glutEntryFunc(windowMouse);
+
+	glMatrixMode(GL_PROJECTION);	// Setup perspective projection
+	glLoadIdentity();
+	gluPerspective(70, 1, 1, 40);
+
+	glMatrixMode(GL_MODELVIEW);		// Setup model transformations
+	glLoadIdentity();
+	gluLookAt(0, 0, 5, 0, 0, -1, 0, 1, 0);
+
+	//  Set default ambient light in scene
+	float  amb[] = { 0, 0, 0, 1 };	// Ambient material property
+	float  lt_amb[] = { 0.5, 0.5, 0.5, 1 };	// Ambient light property
+	float  lt_dif[] = { 0.8, 0.8, 0.8, 1 };	// Ambient light property
+	float  lt_spc[] = { 0, 0, 0, 1 };	// Specular light property
+	float lt_pos[] = { 0.7, 1, 1.5, 0 };	// Light position
+
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
+
+	//  Set Light 0 position, ambient, diffuse, specular intensities
+
+	glLightfv(GL_LIGHT0, GL_POSITION, lt_pos);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, lt_amb);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lt_dif);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, lt_spc);
+
+	//  Enable Light 0 and GL lighting
+
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHTING);
+
+	glShadeModel(GL_SMOOTH);		// Smooth shading
+	glEnable(GL_NORMALIZE);		// Normalize normals
+
+	glClearDepth(1.0);			// Setup background colour
+	glClearColor(0, 0, 0, 0);
+	glEnable(GL_DEPTH_TEST);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glutMainLoop();
 }
